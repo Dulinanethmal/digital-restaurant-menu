@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import "./App.css";
 
 export default function Cart({ 
@@ -14,10 +14,44 @@ export default function Cart({
   subtotal, 
   tax, 
   totalPrice,
-  changeView
+  changeView,
+  paymentFlow 
 }) {
+  const [paymentMethod, setPaymentMethod] = useState("card");
+  const [isProcessing, setIsProcessing] = useState(false); 
+
+  function handleCheckout() {
+    if (cart.length === 0) return alert("Cart is empty");
+    if (!customerName || !tableNumber) return alert("Please enter customer name and table number");
+
+    // 1. Instantly show the loading screen for ALL orders
+    setIsProcessing(true);
+    
+    // 2. Wait just 1 second (super quick!), then place the order and go to tracker
+    setTimeout(() => {
+      setIsProcessing(false);
+      placeOrder(); 
+    }, 1000); 
+  }
+
   return (
     <div className="cart-page">
+      
+      {/* QUICK LOADING OVERLAY */}
+      {isProcessing && (
+        <div className="payment-processing-overlay">
+          <div className="processing-card">
+            <div className="processing-spinner"></div>
+            <h3>
+              {paymentFlow === "before" && paymentMethod !== "cash" 
+                ? "Processing Payment..." 
+                : "Sending to Kitchen..."}
+            </h3>
+            <p>Just a moment!</p>
+          </div>
+        </div>
+      )}
+
       <div className="cart-header-mobile">
         <h2>Your Cart</h2>
         {cart.length > 0 && (
@@ -62,6 +96,36 @@ export default function Cart({
               <input type="text" placeholder="Customer Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
               <input type="number" placeholder="Table No." value={tableNumber} onChange={(e) => setTableNumber(e.target.value)} />
             </div>
+
+            {/* PAYMENT SELECTION UI */}
+            {paymentFlow === "before" && (
+              <div className="payment-methods-section">
+                <h3 style={{ fontSize: "16px", fontWeight: "700", marginBottom: "15px", color: "#1a1a1a" }}>Payment Method</h3>
+                <div className="payment-grid">
+                  
+                  <div className={`payment-option ${paymentMethod === "card" ? "active" : ""}`} onClick={() => setPaymentMethod("card")}>
+                    <span className="pay-icon">💳</span>
+                    <span className="pay-label">Card</span>
+                  </div>
+                  
+                  <div className={`payment-option ${paymentMethod === "apple" ? "active" : ""}`} onClick={() => setPaymentMethod("apple")}>
+                    <span className="pay-icon"></span>
+                    <span className="pay-label">Apple Pay</span>
+                  </div>
+                  
+                  <div className={`payment-option ${paymentMethod === "google" ? "active" : ""}`} onClick={() => setPaymentMethod("google")}>
+                    <span className="pay-icon">G</span>
+                    <span className="pay-label">Google Pay</span>
+                  </div>
+                  
+                  <div className={`payment-option ${paymentMethod === "cash" ? "active" : ""}`} onClick={() => setPaymentMethod("cash")}>
+                    <span className="pay-icon">💵</span>
+                    <span className="pay-label">Cash</span>
+                  </div>
+
+                </div>
+              </div>
+            )}
             
             <div className="order-summary">
               <div className="summary-row"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
@@ -69,14 +133,13 @@ export default function Cart({
               <div className="summary-row total"><span>Total</span><span>${totalPrice.toFixed(2)}</span></div>
             </div>
             
-            <button className="place-order-btn" onClick={placeOrder} disabled={cart.length === 0}>
-              Place Order • ${totalPrice.toFixed(2)}
-            </button>
+            <button className="place-order-btn" onClick={handleCheckout} disabled={cart.length === 0}>
+  {paymentFlow === "before" && paymentMethod !== "cash" ? `Pay & Place Order • $${totalPrice.toFixed(2)}` : `Place Order • $${totalPrice.toFixed(2)}`}
+</button>
           </div>
         </>
       )}
       
-      {/* Adds padding at the bottom so the glassy nav doesn't cover the checkout button */}
       <div style={{ height: "100px" }}></div> 
     </div>
   );
