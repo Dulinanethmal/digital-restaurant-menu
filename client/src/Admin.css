@@ -31,18 +31,51 @@ body {
 .sidebar-brand-sub { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 2px; }
 .sidebar-nav { flex: 1; padding: 0 12px; display: flex; flex-direction: column; gap: 4px; }
 .nav-item {
-  display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px;
-  cursor: pointer; font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.45);
-  transition: background 0.2s, color 0.2s; border: none; background: none;
-  font-family: 'DM Sans', sans-serif; width: 100%; text-align: left;
+  position: relative;
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+  padding: 12px 16px; 
+  border-radius: 12px; 
+  cursor: pointer; 
+  font-size: 14px; 
+  font-weight: 500; 
+  color: rgba(255, 255, 255, 0.85) !important; /* Soft, highly visible white */
+  background: transparent;
+  border: 1px solid transparent; 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* High-end smooth easing */
+  font-family: 'DM Sans', sans-serif; 
+  width: 100%; 
+  text-align: left;
+  overflow: hidden;
 }
-.nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.75); }
-/* Adjusted RGBA to match #f4b400 */
-.nav-item.active { background: rgba(244, 180, 0, 0.15); color: var(--gold); } 
-.nav-icon { font-size: 16px; width: 20px; text-align: center; }
-.nav-badge {
-  margin-left: auto; background: var(--gold); color: white;
-  font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 10px; min-width: 20px; text-align: center;
+
+/* Hover State: Gentle nudge to the right and pure white text */
+.nav-item:hover { 
+  background: rgba(255, 255, 255, 0.06); 
+  color: #ffffff !important; 
+  transform: translateX(4px); 
+}
+
+/* Active State: Gold gradient background, bolder text, and border */
+.nav-item.active { 
+  background: linear-gradient(90deg, rgba(244, 180, 0, 0.15) 0%, rgba(244, 180, 0, 0.02) 100%); 
+  color: var(--gold) !important; 
+  font-weight: 600; 
+  border: 1px solid rgba(244, 180, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Active State: Sleek gold vertical marker on the left */
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 15%;
+  height: 70%;
+  width: 4px;
+  background: var(--gold);
+  border-radius: 0 4px 4px 0;
 }
 .sidebar-footer { padding: 16px 24px 0; border-top: 1px solid rgba(255,255,255,0.08); font-size: 11px; color: rgba(255,255,255,0.2); }
 
