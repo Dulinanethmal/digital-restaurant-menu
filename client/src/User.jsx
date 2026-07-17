@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
 import supabase from "./supabase";
 import "./App.css";
-
 import OrderTracker from "./OrderTracker";
 import Cart from "./Cart";
 
 const CATEGORIES = [
-  { name: "Burgers", icon: "🍔" },
-  { name: "Pizza", icon: "🍕" },
-  { name: "Drinks", icon: "🥤" },
-  { name: "Desserts", icon: "🍰" },
-  { name: "Pasta", icon: "🍝" },
-  { name: "Salads", icon: "🥗" }
+  { name: "Rice"},
+  { name: "Kottu" },
+  { name: "Pizza", },
+  { name: "Burger" },
+  { name: "Chicken"},
+  { name: "Seafood"},
+  { name: "Desserts"},
+  { name: "Soft Drinks"}
 ];
 
 export default function User() {
@@ -29,7 +30,8 @@ export default function User() {
     shop_name: "Lumière & Co.",
     description: "FINE DINING",
     logo_url: "",
-    banner_url: ""
+    banner_url: "",
+    payment_flow: "before" 
   });
 
   useEffect(() => {
@@ -60,6 +62,7 @@ export default function User() {
     }
   }
 
+
   async function fetchShopSettings() {
     const { data } = await supabase.from("shop_settings").select("*").limit(1).maybeSingle();
     if (data) {
@@ -67,7 +70,8 @@ export default function User() {
         shop_name: data.shop_name || "Lumière & Co.",
         description: data.description || "FINE DINING",
         logo_url: data.logo_url || "",
-        banner_url: data.banner_url || ""
+        banner_url: data.banner_url || "",
+        payment_flow: data.payment_flow || "before" 
       });
     }
   }
@@ -115,10 +119,7 @@ export default function User() {
   return (
     <div className="app-container-mobile">
       
-      {/* CENTER: MAIN CONTENT / ROUTING */}
-      {view === "dashboard" ? (
-        <UserDashboard onBack={() => changeView("menu")} />
-      ) : view === "tracker" ? (
+      { view === "tracker" ? (
         <OrderTracker orderId={activeOrderId} onBack={() => changeView("menu")} />
       ) : view === "cart" ? (
         <Cart 
@@ -128,28 +129,24 @@ export default function User() {
           tableNumber={tableNumber} setTableNumber={setTableNumber}
           placeOrder={placeOrder} subtotal={subtotal} tax={tax} totalPrice={totalPrice}
           changeView={changeView}
+          paymentFlow={shopSettings.payment_flow}
         />
       ) : (
         <main className="menu-section">
           
-          {/* NATIVE APP HEADER */}
           <header className="mobile-app-header">
             <div className="header-location">
               <span className="location-icon">📍</span>
               <span className="location-text">{shopSettings.shop_name}</span>
             </div>
-            <button className="header-action-btn">
-              ♡
-            </button>
+            <button className="header-action-btn">♡</button>
           </header>
 
-          {/* SEARCH BAR */}
           <div className="search-container">
             <span className="search-icon">🔍</span>
             <input type="text" className="search-input" placeholder="Type to search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
 
-          {/* CATEGORIES */}
           <div className="categories-wrapper">
             <div className="categories">
               <button className={`category-btn ${activeCategory === "All" ? "active" : ""}`} onClick={() => setActiveCategory("All")}>🍽️ All</button>
@@ -161,24 +158,19 @@ export default function User() {
             </div>
           </div>
 
-          {/* SECTION TITLE */}
           <div className="section-title-row">
             <h2>{searchQuery ? "Search Results" : "Popular Food"}</h2>
             <span className="see-all-btn">See All</span>
           </div>
 
-          {/* FOOD CARDS GRID */}
           <div className="menu-grid">
             {filteredMenu.map((item) => (
               <div key={item.id} className="menu-card">
                 <div className="image-container">
                   {item.image_url ? <img src={item.image_url} alt={item.name} /> : <div className="image-placeholder"></div>}
-                  
-                  {/* Floating Badges inside Image */}
                   <div className="price-badge">${Number(item.price).toFixed(2)}</div>
                   <div className="favorite-badge">♡</div>
                 </div>
-                
                 <div className="menu-info">
                   <div className="menu-text">
                     <h3>{item.name}</h3>
@@ -192,36 +184,20 @@ export default function User() {
             ))}
           </div>
           
-          {/* Spacing to prevent glassy nav from covering bottom content */}
           <div style={{ height: "120px" }}></div>
         </main>
       )}
 
-      {/* GLASSY BOTTOM NAVIGATION BAR */}
-      <div className="glassy-bottom-nav">
-        <button 
-          className={`nav-item ${view === "menu" ? "active" : ""}`} 
-          onClick={() => changeView("menu")}
-        >
+    <div className="glassy-bottom-nav">
+        <button className={`nav-item ${view === "menu" ? "active" : ""}`} onClick={() => changeView("menu")}>
           {view === "menu" ? "Home" : "🏠"}
         </button>
-
-        <button 
-          className={`nav-item ${view === "dashboard" ? "active" : ""}`} 
-          onClick={() => changeView("dashboard")}
-        >
+        <button className={`nav-item ${view === "dashboard" ? "active" : ""}`} onClick={() => changeView("dashboard")}>
           {view === "dashboard" ? "Profile" : "👤"}
         </button>
-
-        <button 
-          className={`nav-item ${view === "cart" ? "active" : ""}`} 
-          onClick={() => changeView("cart")}
-          style={{ position: "relative" }}
-        >
+        <button className={`nav-item ${view === "cart" ? "active" : ""}`} onClick={() => changeView("cart")} style={{ position: "relative" }}>
           {view === "cart" ? "Cart" : "🛒"}
-          {cart.length > 0 && view !== "cart" && (
-            <span className="cart-badge">{cart.length}</span>
-          )}
+          {cart.length > 0 && view !== "cart" && <span className="cart-badge">{cart.length}</span>}
         </button>
       </div>
 
