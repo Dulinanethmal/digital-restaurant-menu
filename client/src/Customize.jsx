@@ -5,7 +5,7 @@ export default function Customize({ showToast }) {
   const logoRef = useRef();
   const bannerRef = useRef();
   
-  const [settingsId, setSettingsId] = useState(null);
+  // We removed settingsId since your table doesn't use a standard ID column
   const [shopName, setShopName] = useState("");
   const [description, setDescription] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
@@ -21,9 +21,8 @@ export default function Customize({ showToast }) {
   }, []);
 
   async function fetchSettings() {
-    const { data, error } = await supabase.from("shop_settings").select("*").limit(1).single();
+    const { data } = await supabase.from("shop_settings").select("*").limit(1).maybeSingle();
     if (data) {
-      setSettingsId(data.id);
       setShopName(data.shop_name || "");
       setDescription(data.description || "");
       setLogoUrl(data.logo_url || "");
@@ -66,22 +65,18 @@ export default function Customize({ showToast }) {
       banner_url: bannerUrl,
     };
 
-    let error;
-    // If we already have settings, update them. Otherwise, insert a new row.
-    if (settingsId) {
-      const res = await supabase.from("shop_settings").update(payload).eq("id", settingsId);
-      error = res.error;
-    } else {
-      const res = await supabase.from("shop_settings").insert([payload]);
-      error = res.error;
-    }
+    // ✅ FIXED: Target the row using payment_flow instead of an ID
+    const { error } = await supabase
+      .from("shop_settings")
+      .update(payload)
+      .not("payment_flow", "is", null);
 
     setSaving(false);
     if (error) {
       showToast("Failed to save settings: " + error.message, true);
     } else {
       showToast("Shop customizations saved successfully!");
-      fetchSettings(); // Refresh to get the ID if it was a new insert
+      fetchSettings(); // Refresh to ensure UI matches database
     }
   }
 
@@ -125,7 +120,7 @@ export default function Customize({ showToast }) {
                 <button className="btn-ghost" onClick={() => logoRef.current?.click()} disabled={uploadingLogo}>
                   {uploadingLogo ? "Uploading..." : "Upload Logo"}
                 </button>
-                {logoUrl && <div className="url-toggle" style={{ marginLeft: "12px", color: "#EF4444" }} onClick={() => setLogoUrl("")}>Remove</div>}
+                {logoUrl && <div className="url-toggle" style={{ marginLeft: "12px", color: "#EF4444", cursor: "pointer" }} onClick={() => setLogoUrl("")}>Remove</div>}
               </div>
             </div>
           </div>
@@ -142,7 +137,7 @@ export default function Customize({ showToast }) {
                 <button className="btn-ghost" onClick={() => bannerRef.current?.click()} disabled={uploadingBanner}>
                   {uploadingBanner ? "Uploading..." : "Upload Banner"}
                 </button>
-                {bannerUrl && <div className="url-toggle" style={{ marginLeft: "12px", color: "#EF4444" }} onClick={() => setBannerUrl("")}>Remove</div>}
+                {bannerUrl && <div className="url-toggle" style={{ marginLeft: "12px", color: "#EF4444", cursor: "pointer" }} onClick={() => setBannerUrl("")}>Remove</div>}
               </div>
             </div>
           </div>
