@@ -1,31 +1,16 @@
 import { useState, useRef } from "react";
 import supabase from "./supabase";
 
-const CATEGORY_MAP = {
-  "Tea": "0c4de31e-67d2-463d-8a4b-27444a0a59c6",
-  "Drinks": "0de00a04-76de-4334-bccd-6c13ea8eb688",
-  "Salads": "1af6780e-3619-4f5e-89c2-f31dd6130393",
-  "Rice Dishes": "1cad6742-17e8-4f5e-bdd8-87c8a90d4f69",
-  "Juices": "34daf59a-6fa7-4a1c-9d81-fab6b53a9718",
-  "Seafood": "3680f74c-c453-40c8-aaf3-fed75b0c6324",
-  "Vegan": "5091132e-5a51-48ed-9ec1-a2acc7f0aa76",
-  "Soups": "5bb02936-96d5-4b17-b9c9-0d41197bb32c",
-  "Chicken": "5bfde4dd-02b7-47ed-ac57-5ee0cbcb669f",
-  "Burgers": "5d7e7424-cf08-44a4-b840-57188b364419",
-  "Coffee": "7b68c0d3-0fbe-4baa-83d3-2b59851e3d66",
-  "Pizza": "9504a4cd-c557-465d-9e2d-90b4914f15ce",
-  "Kids Menu": "a25aea27-3f83-4221-9d2f-f596433025e5",
-  "Steaks": "a28496e9-4ed7-4c59-847f-01dd066551d4",
-  "Appetizers": "a5af5eb7-772e-4ee2-aaed-218dfd1a39f2",
-  "Pasta": "a6600665-64cc-4c76-aa71-c49b4e529053",
-  "Desserts": "a825030f-cf65-45bc-ae43-b67223dad95c",
-  "Smoothies": "b1e1d87b-83dc-4a65-a29b-b73dbcf101af",
-  "Wraps": "be2f35b8-e7d0-459f-a069-d17535b3ebf4",
-  "Breakfast": "c85521ad-daf9-432a-a938-0db2300e1f94",
-  "Cakes": "c9d14119-3d10-41fa-ae81-e0fc30c4706f",
-  "Vegetarian": "d3a803f6-e38e-4be9-a6f6-c9cf1446c482",
-  "Sandwiches": "d52090cd-54a5-4b09-9148-27e4e7f46a60",
-  "Ice Cream": "fd146bcc-0b8f-4988-90b0-70bfc66694c7"
+// eslint-disable-next-line react-refresh/only-export-components
+export const CATEGORY_MAP = {
+  "Rice": "1d51391e-93c4-4e24-b701-05b08ba3ed4d",
+  "Kottu": "83cb5057-e88e-4c7d-8a27-0abf9c7fcced",
+  "Pizza": "57ba7208-cfbe-4b71-ab70-7b288e22b4c6",
+  "Burger": "f66cc25d-f887-46a9-bdbd-2c5b6625871f",
+  "Chicken": "e6b97334-1ce2-41ef-bd9a-ed22ef97da35",
+  "Seafood": "bcd73ea0-3215-4508-b544-3737690d5b19",
+  "Desserts": "52efd91f-a3fa-4a31-8222-5d7789c3e796",
+  "Soft Drinks": "d7ad31e4-ef1f-4133-a1ca-3ef5df240671"
 };
 
 const CATEGORIES = Object.keys(CATEGORY_MAP);
