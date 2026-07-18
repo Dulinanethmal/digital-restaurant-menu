@@ -11,8 +11,8 @@ export default function PaymentSettings({ showToast }) {
 
   async function fetchSettings() {
     setLoading(true);
-    // ✅ Changed select("*") so it doesn't crash looking for an "id"
-    const { data, error } = await supabase.from("shop_settings").select("*").limit(1).maybeSingle();
+
+    const { data } = await supabase.from("shop_settings").select("*").limit(1).maybeSingle();
     
     if (data && data.payment_flow) {
       setPaymentFlow(data.payment_flow);
