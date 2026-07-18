@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 
 // Configures the colors for the status badges
 const STATUS_CONFIG = {
