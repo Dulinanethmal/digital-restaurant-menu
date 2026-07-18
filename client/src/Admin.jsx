@@ -7,6 +7,9 @@ import FoodForm from "./FoodForm";
 import Customize from "./Customize";
 import QRCode from "./QRCode";
 import PaymentSettings from "./PaymentSettings";
+import OrdersManagement from "./OrdersManagement";
+import ReportsAnalytics from "./ReportsAnalytics";
+import Profile from "./Profile";
 
 export default function Admin() {
   const [tab, setTab] = useState("orders");
@@ -68,11 +71,11 @@ export default function Admin() {
       .eq("id", id)
       .select();
 
-    // 3. Catch silent failures (like RLS blocking the update)
+    
     if (error || !data || data.length === 0) {
       console.error("Database Update Failed:", error);
       showToast("Database blocked the update! Please disable RLS in Supabase.", true);
-      fetchOrders(); // Revert back to real database state
+      fetchOrders(); 
     } else {
       showToast(`Order marked as ${newStatus}`);
     }
@@ -114,8 +117,11 @@ export default function Admin() {
     { id: "orders", label: "Orders", badge: pendingCount + preparingCount },
     { id: "menu", label: "Menu Items", badge: menuItems.length },
     { id: "qrcode", label: "QR Generator" },
+    { id: "orders-management", label: "Orders Management" },
     { id: "payment", label: "Payment Settings" },
     { id: "customize", label: "Customize Shop" },
+    { id: "reports", label: "Reports & Analytics" },
+    { id: "profile", label: "Profile" }
   ];
 
   return (
@@ -166,23 +172,38 @@ export default function Admin() {
           </nav>
         </div>
 
-        <div className="main-area">
-          <div className="main-header">
-            <div>
-              <div className="page-title">
-                {tab === "orders" ? "Orders" : tab === "menu" ? "Menu Items" : tab === "qrcode" ? "QR Generator" : tab === "payment" ? "Payment Settings" : "Shop Customization"}
-              </div>
-              <div className="page-sub">
-                {tab === "orders" ? `${orders.length} total orders` : tab === "menu" ? `${menuItems.length} items on menu` : "Update your store branding"}
-              </div>
-            </div>
-            {tab !== "customize" && tab !== "payment" && tab !== "qrcode" && (
-              <div className="header-actions">
-                <button className="btn-ghost" onClick={() => { fetchOrders(); fetchMenuItems(); }}>↻ Refresh</button>
-                <button className="btn-primary" onClick={() => setShowAddModal(true)}>+ Add New Item</button>
-              </div>
-            )}
-          </div>
+       <div className="main-area">
+  <div className="main-header">
+    <div>
+      <div className="page-title">
+        {tab === "orders" ? "Live Orders" 
+         : tab === "orders-management" ? "Orders Management" 
+         : tab === "menu" ? "Menu Items" 
+         : tab === "qrcode" ? "QR Generator" 
+         : tab === "payment" ? "Payment Settings" 
+         : tab === "reports" ? "Reports & Analytics" 
+         : "Shop Customization"}
+      </div>
+      <div className="page-sub">
+        {tab === "orders" ? `${orders.length} total orders` 
+         : tab === "orders-management" ? "Manage and track order history"
+         : tab === "menu" ? `${menuItems.length} items on menu` 
+         : tab === "qrcode" ? "Generate table QR codes"
+         : tab === "payment" ? "Configure your payment gateways"
+         : "Update your store branding"}
+      </div>
+    </div>
+
+    {/* Only show Add/Refresh buttons on specific tabs */}
+    {(tab === "orders" || tab === "menu") && (
+      <div className="header-actions">
+        <button className="btn-ghost" onClick={() => { fetchOrders(); fetchMenuItems(); }}>↻ Refresh</button>
+        {tab === "menu" && (
+          <button className="btn-primary" onClick={() => setShowAddModal(true)}>+ Add New Item</button>
+        )}
+      </div>
+    )}
+  </div>
 
           <div className="main-content">
             {tab === "orders" && (
@@ -213,6 +234,8 @@ export default function Admin() {
             {/* ROUTING */}
             {tab === "orders" ? (
               <Orders orders={orders} updateStatus={updateStatus} />
+            ) : tab === "orders-management" ? (
+              <OrdersManagement showToast={showToast} />
             ) : tab === "menu" ? (
               <MenuItems
                 menuItems={menuItems}
@@ -226,6 +249,10 @@ export default function Admin() {
               <PaymentSettings showToast={showToast} />
             ) : tab === "customize" ? (
               <Customize showToast={showToast} />
+            ) : tab === "reports" ? (
+              <ReportsAnalytics />
+            ) : tab === "profile" ? (
+              <Profile />
             ) : null}
           </div>
         </div>
