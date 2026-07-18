@@ -95,18 +95,25 @@ export default function User() {
   const totalPrice = subtotal + tax;
 
   async function placeOrder() {
-    if (cart.length === 0) return alert("Cart is empty");
-    if (!customerName || !tableNumber) return alert("Please enter customer name and table number");
+  if (cart.length === 0) return alert("Cart is empty");
+  if (!customerName || !tableNumber) return alert("Please enter customer name and table number");
 
-    const { data, error } = await supabase.from("orders").insert([
-      { customer_name: customerName, table_number: Number(tableNumber), total_amount: totalPrice, status: "Pending" },
-    ]).select();
+  const { data, error } = await supabase.from("orders").insert([
+    { 
+      customer_name: customerName, 
+      table_number: Number(tableNumber), 
+      total_amount: totalPrice, 
+      status: "Pending",
+      payment_status: "Unpaid", // Ensure this exists
+      items: cart // <--- THIS SAVES THE CART DATA TO THE NEW COLUMN
+    },
+  ]).select();
 
-    if (error || !data) return alert("Failed to place order");
+  if (error || !data) return alert("Failed to place order: " + error.message);
 
-    changeView("tracker", data[0].id);
-    setCart([]); setCustomerName(""); setTableNumber("");
-  }
+  changeView("tracker", data[0].id);
+  setCart([]); setCustomerName(""); setTableNumber("");
+}
 
   const filteredMenu = menuItems.filter((item) => {
     if (item.is_available === false) return false;
