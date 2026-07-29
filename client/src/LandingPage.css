@@ -1,0 +1,500 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+
+.landing-page {
+  font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  background-color: #050505; 
+  color: #ffffff;
+  min-height: 100vh;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+.landing-page a {
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s ease;
+}
+
+.text-gold {
+  color: #eeb400;
+  text-shadow: 0 0 30px rgba(238, 180, 0, 0.4);
+}
+
+/* --- ENTRANCE ANIMATIONS --- */
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-up {
+  opacity: 0;
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.3s; }
+.delay-3 { animation-delay: 0.5s; }
+.delay-4 { animation-delay: 0.7s; }
+
+/* --- FLOATING GLASS NAVBAR --- */
+.navbar-wrapper {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 24px 0;
+  z-index: 1000;
+}
+
+.navbar {
+  width: 90%;
+  max-width: 1200px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 32px;
+  background: rgba(15, 15, 15, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50px; /* Pill shape */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-logo-img {
+  height: 32px; /* Slightly smaller for the pill nav */
+  width: auto;
+}
+
+.nav-tagline {
+  font-size: 13px;
+  color: #888;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: 600;
+  display: none;
+  border-left: 1px solid #333;
+  padding-left: 16px;
+}
+
+@media (min-width: 768px) {
+  .nav-tagline { display: block; }
+}
+
+.nav-links {
+  display: none;
+  gap: 32px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #a3a3a3;
+}
+
+@media (min-width: 992px) {
+  .nav-links { display: flex; }
+}
+
+.nav-links a {
+  position: relative;
+}
+
+/* Hover underline animation */
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -4px;
+  left: 0;
+  background-color: #eeb400;
+  transition: width 0.3s ease;
+}
+
+.nav-links a:hover {
+  color: #ffffff;
+}
+
+.nav-links a:hover::after {
+  width: 100%;
+}
+
+.nav-actions {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.btn-login {
+  font-size: 14px;
+  font-weight: 600;
+  color: #a3a3a3;
+}
+
+.btn-login:hover {
+  color: #ffffff;
+}
+
+.btn-primary {
+  background: #eeb400;
+  color: #111;
+  padding: 12px 28px;
+  border-radius: 50px; /* Pill shape button */
+  font-weight: 700;
+  font-size: 14px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border: none;
+  cursor: pointer;
+  display: inline-block;
+}
+
+.btn-glow:hover {
+  background: #ffc926;
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 10px 25px rgba(238, 180, 0, 0.4); /* Stronger gold glow */
+}
+
+/* --- HERO SECTION --- */
+.hero {
+  padding: 180px 5% 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 80px;
+  position: relative;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+@media (min-width: 992px) {
+  .hero {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
+
+/* Deeper, more dramatic glow behind hero */
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 40%;
+  transform: translate(-50%, -50%);
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(238, 180, 0, 0.12) 0%, rgba(5, 5, 5, 0) 60%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.hero-content {
+  flex: 1.2;
+  z-index: 1;
+}
+
+.hero-title {
+  font-size: 56px; /* Larger title */
+  line-height: 1.15;
+  font-weight: 800;
+  margin-bottom: 30px;
+  letter-spacing: -1px;
+}
+
+.hero-subtitle {
+  font-size: 20px;
+  color: #a3a3a3;
+  line-height: 1.6;
+  margin-bottom: 48px;
+  max-width: 90%;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 16px;
+}
+
+.btn-large {
+  padding: 18px 36px;
+  font-size: 16px;
+}
+
+/* Advanced 3D CSS Mockup Animations */
+.hero-visual {
+  flex: 1;
+  position: relative;
+  height: 550px;
+  width: 100%;
+  z-index: 1;
+  perspective: 1000px; /* Adds 3D depth */
+}
+
+.mockup-dashboard {
+  position: absolute;
+  right: -20px;
+  top: 40px;
+  width: 90%;
+  height: 400px;
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.8), 0 0 40px rgba(238, 180, 0, 0.05);
+  animation: floatDashboard 8s ease-in-out infinite;
+  display: flex;
+  overflow: hidden;
+  transform: rotateY(-10deg) rotateX(5deg); /* 3D tilt */
+}
+
+.mockup-mobile {
+  position: absolute;
+  left: -20px;
+  bottom: 0px;
+  width: 220px;
+  height: 450px;
+  background: #111;
+  border: 6px solid #222;
+  border-radius: 36px;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.9), 0 0 30px rgba(238, 180, 0, 0.15);
+  animation: floatMobile 7s ease-in-out infinite 1s;
+  overflow: hidden;
+}
+
+@keyframes floatDashboard {
+  0% { transform: translateY(0px) rotateY(-10deg) rotateX(5deg); }
+  50% { transform: translateY(-20px) rotateY(-8deg) rotateX(7deg); }
+  100% { transform: translateY(0px) rotateY(-10deg) rotateX(5deg); }
+}
+
+@keyframes floatMobile {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-25px) rotate(2deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+/* --- REST OF SECTIONS (Features, How it Works, Pricing, Footer) --- */
+/* The styles below remain mostly the same, ensuring the rest of the page matches the new premium feel */
+
+.section {
+  padding: 120px 5%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-title {
+  text-align: center;
+  font-size: 40px;
+  font-weight: 800;
+  margin-bottom: 20px;
+  letter-spacing: -1px;
+}
+
+.section-subtitle {
+  text-align: center;
+  color: #a3a3a3;
+  font-size: 18px;
+  margin-bottom: 80px;
+}
+
+/* --- FEATURES --- */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 32px;
+}
+
+.feature-card {
+  background: #0f0f0f;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 40px;
+  border-radius: 24px;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.feature-card:hover {
+  transform: translateY(-10px);
+  border-color: rgba(238, 180, 0, 0.3);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px rgba(238, 180, 0, 0.05);
+  background: #141414;
+}
+
+.feature-icon-wrapper {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, rgba(238, 180, 0, 0.2) 0%, rgba(238, 180, 0, 0.05) 100%);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  color: #eeb400;
+  border: 1px solid rgba(238, 180, 0, 0.2);
+}
+
+.feature-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.feature-desc {
+  color: #888;
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+/* --- HOW IT WORKS --- */
+.steps-container {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  position: relative;
+}
+
+@media (min-width: 768px) {
+  .steps-container {
+    flex-direction: row;
+    gap: 24px;
+  }
+}
+
+.step-card {
+  flex: 1;
+  text-align: center;
+  padding: 24px;
+}
+
+.step-number {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #eeb400 0%, #b8860b 100%);
+  color: #111;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 auto 32px;
+  box-shadow: 0 10px 20px rgba(238, 180, 0, 0.2);
+}
+
+/* --- PRICING --- */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .pricing-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.pricing-card {
+  background: #0f0f0f;
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 32px;
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.pricing-card.pro {
+  border: 2px solid #eeb400;
+  background: linear-gradient(180deg, rgba(238,180,0,0.05) 0%, rgba(15,15,15,1) 100%);
+  transform: scale(1.03);
+  box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 30px rgba(238,180,0,0.1);
+}
+
+.popular-badge {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #eeb400;
+  color: #111;
+  padding: 6px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.tier-name {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.tier-price {
+  font-size: 56px;
+  font-weight: 800;
+  margin-bottom: 24px;
+}
+
+.tier-price span {
+  font-size: 18px;
+  color: #888;
+  font-weight: 500;
+}
+
+.pricing-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 40px 0;
+  flex: 1;
+}
+
+.pricing-features li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  color: #a3a3a3;
+  font-size: 16px;
+}
+
+/* --- FINAL CTA & FOOTER --- */
+.final-cta {
+  text-align: center;
+  padding: 120px 5%;
+  background: linear-gradient(0deg, #111 0%, #050505 100%);
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.footer {
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding: 48px 5%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: center;
+  color: #666;
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  .footer {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
+
+.footer-links {
+  display: flex;
+  gap: 32px;
+}
