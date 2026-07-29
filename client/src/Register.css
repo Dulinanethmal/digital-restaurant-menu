@@ -1,0 +1,129 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+.register-container {
+  display: flex;
+  min-height: 100vh;
+  justify-content: center;
+  align-items: center;
+  background: #050505;
+  color: white;
+  font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  padding: 40px 20px;
+}
+
+.register-card {
+  background: #0a0a0a;
+  padding: 48px 40px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.8), 0 0 20px rgba(238, 180, 0, 0.05);
+  border: 1px solid #222;
+  border-top: 4px solid #eeb400;
+}
+
+.register-title {
+  text-align: center;
+  margin-bottom: 8px;
+  margin-top: 0;
+  font-size: 28px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+}
+
+.register-subtitle {
+  text-align: center;
+  margin-bottom: 32px;
+  font-size: 15px;
+  color: #888;
+}
+
+.register-section-title {
+  font-size: 14px;
+  color: #eeb400;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+  margin-top: 24px;
+  border-bottom: 1px solid #222;
+  padding-bottom: 8px;
+}
+
+.register-error {
+  background: rgba(220, 38, 38, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.register-field {
+  margin-bottom: 20px;
+}
+
+.register-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #a3a3a3;
+}
+
+.register-input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background: #111;
+  color: white;
+  font-size: 15px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.register-input:focus {
+  outline: none;
+  border-color: #eeb400;
+  box-shadow: 0 0 0 3px rgba(238, 180, 0, 0.15); 
+  background: #1a1a1a;
+}
+
+.register-input::placeholder {
+  color: #444;
+}
+
+.register-button {
+  width: 100%;
+  padding: 16px;
+  border-radius: 8px;
+  border: none;
+  background: #eeb400;
+  color: #111111;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 24px;
+  font-family: inherit;
+}
+
+.register-button:hover:not(:disabled) {
+  background: #f5c425;
+  box-shadow: 0 4px 15px rgba(238, 180, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+.register-button:disabled {
+  background: #333;
+  color: #666;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
