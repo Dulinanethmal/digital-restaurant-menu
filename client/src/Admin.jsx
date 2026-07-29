@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import supabase from "./supabase";
 import "./Admin.css";
+
 import Orders from "./Orders";
 import MenuItems from "./MenuItems";
 import FoodForm from "./FoodForm";
@@ -12,6 +14,9 @@ import ReportsAnalytics from "./ReportsAnalytics";
 import Profile from "./Profile";
 
 export default function Admin() {
+  const navigate = useNavigate();
+
+  // --- STATE ---
   const [tab, setTab] = useState("orders");
   const [orders, setOrders] = useState([]);
   const [menuItems, setMenuItems] = useState([]);
@@ -19,62 +24,91 @@ export default function Admin() {
   const [editItem, setEditItem] = useState(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState({ visible: false, msg: "", error: false });
+  
+  // SECURITY & TENANT STATE
+  const [authLoading, setAuthLoading] = useState(true);
+  const [shopId, setShopId] = useState(null);
 
+  // Shop Settings State
+  const [shopSettings, setShopSettings] = useState({
+    shop_name: "Loading...",
+    description: "",
+    logo_url: ""
+  });
+
+  // 1. AUTHENTICATION CHECK
   useEffect(() => {
+    const sessionData = localStorage.getItem("custom_session");
+    if (sessionData) {
+      const parsedData = JSON.parse(sessionData);
+      setShopId(parsedData.shop_id); // Save their specific shop_id
+      setAuthLoading(false);
+    } else {
+      navigate("/login"); // Kick out unauthorized users
+    }
+  }, [navigate]);
+
+  // 2. DATA FETCHING (Only runs after we know their shopId)
+  useEffect(() => {
+    if (!shopId) return; 
+
     fetchOrders();
     fetchMenuItems();
+    fetchShopSettings();
 
     // Auto-refresh orders every 5 seconds
     const orderInterval = setInterval(() => {
       fetchOrders();
     }, 5000);
 
-    return () => clearInterval(orderInterval);
-  }, []);
+    // Listen for shop changes ONLY for this specific shop
+    const settingsSub = supabase
+      .channel('admin-shop-settings')
+      .on('postgres', { event: '*', schema: 'public', table: 'shops', filter: `id=eq.${shopId}` }, () => {
+        fetchShopSettings();
+      })
+      .subscribe();
 
-  const [, setShopSettings] = useState({
-    shop_name: "Admin Panel",
-    description: "Manage Store",
-    logo_url: ""
-  });
+    return () => {
+      clearInterval(orderInterval);
+      supabase.removeChannel(settingsSub);
+    };
+  }, [shopId]);
 
-  useEffect(() => {
-    async function fetchShopSettings() {
-      const { data } = await supabase.from("shop_settings").select("*").limit(1).maybeSingle();
-      if (data) setShopSettings(data);
-    }
-    fetchShopSettings();
-  }, []);
+  // --- QUERIES FILTERED BY SHOP ID ---
+  async function fetchShopSettings() {
+    // Notice we are querying the new "shops" table now!
+    const { data } = await supabase.from("shops").select("*").eq("id", shopId).maybeSingle();
+    if (data) setShopSettings(data);
+  }
+
+  async function fetchOrders() {
+    const { data } = await supabase.from("orders").select("*").eq("shop_id", shopId).order("created_at", { ascending: false });
+    setOrders(data || []);
+  }
+
+  async function fetchMenuItems() {
+    const { data } = await supabase.from("menu_items").select("*").eq("shop_id", shopId).order("name");
+    setMenuItems(data || []);
+  }
 
   function showToast(msg, error = false) {
     setToast({ visible: true, msg, error });
     setTimeout(() => setToast(t => ({ ...t, visible: false })), 4000);
   }
 
-  async function fetchOrders() {
-    const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
-    setOrders(data || []);
-  }
-
-  async function fetchMenuItems() {
-    const { data } = await supabase.from("menu_items").select("*").order("name");
-    setMenuItems(data || []);
-  }
-
+  // --- ACTIONS ---
   async function updateStatus(id, newStatus) {
-    // 1. Instantly update UI so the app feels fast
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
-    // 2. Update Database AND ask it to return the updated row (.select())
+    
     const { data, error } = await supabase
       .from("orders")
       .update({ status: newStatus })
       .eq("id", id)
       .select();
-
     
     if (error || !data || data.length === 0) {
-      console.error("Database Update Failed:", error);
-      showToast("Database blocked the update! Please disable RLS in Supabase.", true);
+      showToast("Failed to update order", true);
       fetchOrders(); 
     } else {
       showToast(`Order marked as ${newStatus}`);
@@ -83,9 +117,14 @@ export default function Admin() {
 
   async function handleAdd(fields) {
     setSaving(true);
-    const { error } = await supabase.from("menu_items").insert([fields]);
+    // Attach the shop_id to the new menu item!
+    const payload = { ...fields, shop_id: shopId };
+    
+    const { error } = await supabase.from("menu_items").insert([payload]);
     setSaving(false);
+    
     if (error) { showToast("Failed to add: " + error.message, true); return; }
+    
     showToast("Item added to menu!");
     setShowAddModal(false);
     fetchMenuItems();
@@ -96,7 +135,9 @@ export default function Admin() {
     setSaving(true);
     const { error } = await supabase.from("menu_items").update(fields).eq("id", editItem.id);
     setSaving(false);
+    
     if (error) { showToast("Failed to save: " + error.message, true); return; }
+    
     showToast("Item updated!");
     setEditItem(null);
     fetchMenuItems();
@@ -107,6 +148,17 @@ export default function Admin() {
     await supabase.from("menu_items").delete().eq("id", id);
     fetchMenuItems();
     showToast("Item deleted");
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem("custom_session");
+    supabase.auth.signOut();
+    navigate("/login");
+  };
+
+  // --- RENDER HELPERS ---
+  if (authLoading) {
+    return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#050505', color: 'white' }}><h2>Loading dashboard...</h2></div>;
   }
 
   const pendingCount = orders.filter(o => o.status === "Pending").length;
@@ -155,10 +207,11 @@ export default function Admin() {
       )}
 
       <div className="admin-layout">
+        
         <div className="sidebar">
           <div className="sidebar-brand">
             <div className="sidebar-brand-tag">Admin Panel</div>
-            <div className="sidebar-brand-name">NONAME</div>
+            <div className="sidebar-brand-name">{shopSettings.shop_name}</div>
             <div className="sidebar-brand-sub">Restaurant Management</div>
           </div>
           <nav className="sidebar-nav">
@@ -170,40 +223,48 @@ export default function Admin() {
               </button>
             ))}
           </nav>
+
+          <div style={{ marginTop: 'auto', padding: '20px' }}>
+            <button onClick={handleLogout} className="btn-danger-outline" style={{ width: '100%', padding: '10px' }}>
+              Log Out
+            </button>
+          </div>
         </div>
 
-       <div className="main-area">
-  <div className="main-header">
-    <div>
-      <div className="page-title">
-        {tab === "orders" ? "Live Orders" 
-         : tab === "orders-management" ? "Orders Management" 
-         : tab === "menu" ? "Menu Items" 
-         : tab === "qrcode" ? "QR Generator" 
-         : tab === "payment" ? "Payment Settings" 
-         : tab === "reports" ? "Reports & Analytics" 
-         : "Shop Customization"}
-      </div>
-      <div className="page-sub">
-        {tab === "orders" ? `${orders.length} total orders` 
-         : tab === "orders-management" ? "Manage and track order history"
-         : tab === "menu" ? `${menuItems.length} items on menu` 
-         : tab === "qrcode" ? "Generate table QR codes"
-         : tab === "payment" ? "Configure your payment gateways"
-         : "Update your store branding"}
-      </div>
-    </div>
+        <div className="main-area">
+          <div className="main-header">
+            <div>
+              <div className="page-title">
+                {tab === "orders" ? "Live Orders" 
+                 : tab === "orders-management" ? "Orders Management" 
+                 : tab === "menu" ? "Menu Items" 
+                 : tab === "qrcode" ? "QR Generator" 
+                 : tab === "payment" ? "Payment Settings" 
+                 : tab === "reports" ? "Reports & Analytics" 
+                 : tab === "profile" ? "Profile"
+                 : "Shop Customization"}
+              </div>
+              <div className="page-sub">
+                {tab === "orders" ? `${orders.length} total orders` 
+                 : tab === "orders-management" ? "Manage and track order history"
+                 : tab === "menu" ? `${menuItems.length} items on menu` 
+                 : tab === "qrcode" ? "Generate table QR codes"
+                 : tab === "payment" ? "Configure your payment gateways"
+                 : tab === "reports" ? "View performance and sales"
+                 : tab === "profile" ? "Manage your account"
+                 : "Update your store branding"}
+              </div>
+            </div>
 
-    {/* Only show Add/Refresh buttons on specific tabs */}
-    {(tab === "orders" || tab === "menu") && (
-      <div className="header-actions">
-        <button className="btn-ghost" onClick={() => { fetchOrders(); fetchMenuItems(); }}>↻ Refresh</button>
-        {tab === "menu" && (
-          <button className="btn-primary" onClick={() => setShowAddModal(true)}>+ Add New Item</button>
-        )}
-      </div>
-    )}
-  </div>
+            {(tab === "orders" || tab === "menu") && (
+              <div className="header-actions">
+                <button className="btn-ghost" onClick={() => { fetchOrders(); fetchMenuItems(); }}>↻ Refresh</button>
+                {tab === "menu" && (
+                  <button className="btn-primary" onClick={() => setShowAddModal(true)}>+ Add New Item</button>
+                )}
+              </div>
+            )}
+          </div>
 
           <div className="main-content">
             {tab === "orders" && (
