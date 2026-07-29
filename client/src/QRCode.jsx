@@ -2,8 +2,12 @@ import { useState, useRef } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 
 export default function QRCode({ showToast }) {
-  // Automatically gets your website's URL (e.g., localhost:5173/user)
-  const baseUrl = window.location.origin + "/user";
+  // 1. Get the current logged-in restaurant's shop_id
+  const session = JSON.parse(localStorage.getItem("custom_session") || "{}");
+  const shopId = session.shop_id;
+
+  // 2. Embed the shopId directly into the QR code's base URL
+  const baseUrl = `${window.location.origin}/user?shop=${shopId}`;
   
   const [tableNumber, setTableNumber] = useState("");
   const [activeUrl, setActiveUrl] = useState(baseUrl);
@@ -12,12 +16,18 @@ export default function QRCode({ showToast }) {
 
   // Generate a new QR code (General or Table-specific)
   const handleGenerate = () => {
+    if (!shopId) {
+      alert("Error: Shop ID is missing. Please log in again.");
+      return;
+    }
+
     if (tableNumber.trim() === "") {
       setActiveUrl(baseUrl);
       setIsCustom(false);
       if (showToast) showToast("General store QR code generated!");
     } else {
-      setActiveUrl(`${baseUrl}?table=${tableNumber}`);
+      // 3. Use '&' instead of '?' for the table number because '?shop=...' is already in the URL
+      setActiveUrl(`${baseUrl}&table=${tableNumber}`);
       setIsCustom(true);
       if (showToast) showToast(`QR code generated for Table ${tableNumber}!`);
     }
@@ -51,7 +61,7 @@ export default function QRCode({ showToast }) {
       <div style={styles.leftCol}>
         <h2 style={styles.heading}>Generate QR Code</h2>
         <p style={styles.subtext}>
-          Print this QR code and place it on your tables. When customers scan it, they will be sent directly to your digital menu.
+          Print this QR code and place it on your tables. When customers scan it, they will be sent directly to your specific digital menu.
         </p>
 
         <div style={styles.formGroup}>
