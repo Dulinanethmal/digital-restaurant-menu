@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import supabase from "./supabase"; // Make sure this path is correct
+import supabase from "./supabase"; 
 import { 
   LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from "recharts";
@@ -10,6 +10,10 @@ export default function ReportsAnalytics() {
   const [dateRange, setDateRange] = useState("Today");
   const [loading, setLoading] = useState(true);
 
+  // 1. Grab the specific restaurant's ID from the admin session
+  const session = JSON.parse(localStorage.getItem("custom_session") || "{}");
+  const shopId = session.shop_id;
+
   // Dynamic Data States
   const [kpis, setKpis] = useState({ revenue: 0, total: 0, avg: 0, completed: 0, cancelled: 0, refunds: 0 });
   const [bestSellers, setBestSellers] = useState([]);
@@ -17,8 +21,13 @@ export default function ReportsAnalytics() {
   const [paymentData, setPaymentData] = useState([]);
 
   useEffect(() => {
+    if (!shopId) {
+      console.error("No shop ID found in session.");
+      setLoading(false);
+      return;
+    }
     fetchAnalyticsData();
-  }, [dateRange]);
+  }, [dateRange, shopId]); // Added shopId to dependencies
 
   async function fetchAnalyticsData() {
     setLoading(true);
@@ -43,10 +52,11 @@ export default function ReportsAnalytics() {
       startDate = new Date("2020-01-01"); // Custom/All Time fallback
     }
 
-    // 2. Fetch Orders from Supabase
+    // 2. Fetch Orders securely for THIS shop only
     const { data: orders, error } = await supabase
       .from("orders")
       .select("*")
+      .eq("shop_id", shopId) // MUST INCLUDE THIS to prevent leaking other restaurants' data
       .gte("created_at", startDate.toISOString())
       .lte("created_at", endDate.toISOString());
 

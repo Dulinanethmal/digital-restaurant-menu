@@ -3,21 +3,49 @@ import supabase from "./supabase";
 
 export default function OrdersManagement() {
   const [orders, setOrders] = useState([]);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("All");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [search, setSearch] = useState("");
 
+  // 1. Get the current logged-in restaurant's shop_id from the session
+  const session = JSON.parse(localStorage.getItem("custom_session") || "{}");
+  const shopId = session.shop_id;
+
   useEffect(() => {
+    if (!shopId) {
+      console.error("No shop ID found in session.");
+      setLoading(false);
+      return;
+    }
+
     fetchOrders();
-    const channel = supabase.channel('realtime-orders')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchOrders)
+    
+    // 2. SECURE REALTIME: Only listen for new orders that belong to THIS shop
+    const channel = supabase.channel(`realtime-orders-${shopId}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'orders',
+        filter: `shop_id=eq.${shopId}` // Stops other restaurants' orders from appearing here
+      }, fetchOrders)
       .subscribe();
+      
     return () => supabase.removeChannel(channel);
-  }, []);
+  }, [shopId]);
 
   async function fetchOrders() {
-    const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+    // 3. SECURE FETCH: Only grab orders for this specific shop
+    const { data, error } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("shop_id", shopId) // Locks the data down
+      .order("created_at", { ascending: false });
+      
+    if (error) {
+      console.error("Error fetching orders:", error);
+    }
+    
     setOrders(data || []);
     setLoading(false);
   }
@@ -38,7 +66,7 @@ export default function OrdersManagement() {
 
   return (
     <div className="admin-page">
-      {/* 1. Summary Cards */}
+    
       <div className="stats-row">
         {[
           { label: "Total Orders", val: stats.total },
@@ -51,7 +79,7 @@ export default function OrdersManagement() {
         ))}
       </div>
 
-      {/* 2. Controls */}
+      {/* Controls */}
       <div className="orders-filters">
         <input placeholder="Search ID/Table..." onChange={(e) => setSearch(e.target.value)} className="field-input" />
         <div className="tab-group">
@@ -61,37 +89,63 @@ export default function OrdersManagement() {
         </div>
       </div>
 
-      {/* 3. Table */}
+      {/* Table */}
       <div className="table-container">
-        <table className="orders-table">
-          <thead>
-            <tr>
-              <th>Order ID</th><th>Table</th><th>Total</th><th>Status</th><th>Time</th><th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredOrders.map(o => (
-              <tr key={o.id}>
-                <td>#{o.id.slice(0,6)}</td>
-                <td>Table {o.table_number}</td>
-                <td>${Number(o.total_amount).toFixed(2)}</td>
-                <td><span className={`badge ${o.status}`}>{o.status}</span></td>
-                <td>{new Date(o.created_at).toLocaleTimeString()}</td>
-                <td><button className="btn-ghost" onClick={() => setSelectedOrder(o)}>View Details</button></td>
+        {loading ? (
+           <p style={{ padding: "20px" }}>Loading orders...</p>
+        ) : (
+          <table className="orders-table">
+            <thead>
+              <tr>
+                <th>Order ID</th><th>Table</th><th>Total</th><th>Status</th><th>Time</th><th>Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredOrders.length === 0 ? (
+                <tr>
+                  <td colSpan="6" style={{ textAlign: "center", padding: "20px" }}>No orders found</td>
+                </tr>
+              ) : (
+                filteredOrders.map(o => (
+                  <tr key={o.id}>
+                    <td>#{o.id.slice(0,6)}</td>
+                    <td>Table {o.table_number}</td>
+                    <td>${Number(o.total_amount).toFixed(2)}</td>
+                    <td><span className={`badge ${o.status.toLowerCase()}`}>{o.status}</span></td>
+                    <td>{new Date(o.created_at).toLocaleTimeString()}</td>
+                    <td><button className="btn-ghost" onClick={() => setSelectedOrder(o)}>View Details</button></td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
 
-      {selectedOrder && <OrderDetails order={selectedOrder} onClose={() => setSelectedOrder(null)} />}
+      {selectedOrder && <OrderDetails order={selectedOrder} onClose={() => setSelectedOrder(null)} fetchOrders={fetchOrders} />}
     </div>
   );
 }
 
-function OrderDetails({ order, onClose }) {
-  // Safety check: ensure items is an array to prevent mapping crashes
+function OrderDetails({ order, onClose, fetchOrders }) {
   const items = Array.isArray(order?.items) ? order.items : [];
+
+  // Added functional Cancel logic
+  async function handleCancelOrder() {
+    if (!window.confirm("Are you sure you want to cancel this order?")) return;
+    
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: "Cancelled" })
+      .eq("id", order.id);
+      
+    if (error) {
+      alert("Failed to cancel order: " + error.message);
+    } else {
+      fetchOrders(); // Refresh the list
+      onClose(); // Close the modal
+    }
+  }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -155,10 +209,10 @@ function OrderDetails({ order, onClose }) {
             
             {order?.status !== "New" && order?.status !== "Pending" && (
               <div style={{ padding: "10px 0", borderBottom: "1px solid #eee", fontSize: "14px", color: "#444" }}>
-                Kitchen Accepted — {new Date().toLocaleTimeString()} 
+                Status changed to {order.status}
               </div>
             )}
-            {/* Add more statuses here as needed (e.g., Served, Completed) */}
+         
           </div>
         </div>
 
@@ -170,12 +224,14 @@ function OrderDetails({ order, onClose }) {
           >
             Print Receipt
           </button>
-          <button 
-            onClick={() => alert("Cancel logic goes here!")} 
-            style={{ padding: "10px 20px", background: "transparent", color: "#333", border: "1px solid #999", borderRadius: "4px", cursor: "pointer" }}
-          >
-            Cancel Order
-          </button>
+          {order?.status !== "Cancelled" && (
+            <button 
+              onClick={handleCancelOrder} 
+              style={{ padding: "10px 20px", background: "transparent", color: "#333", border: "1px solid #999", borderRadius: "4px", cursor: "pointer" }}
+            >
+              Cancel Order
+            </button>
+          )}
         </div>
 
       </div>

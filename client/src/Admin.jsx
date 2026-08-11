@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import supabase from "./supabase";
+import supabase from "./supabase"; // Kept for Auth and Real-time channels
 import "./Admin.css";
 
 import Orders from "./Orders";
@@ -12,6 +12,11 @@ import PaymentSettings from "./PaymentSettings";
 import OrdersManagement from "./OrdersManagement";
 import ReportsAnalytics from "./ReportsAnalytics";
 import Profile from "./Profile";
+import StaffManagement from "./StaffManagement";
+import CashierDashboard from "./CashierDashboard";
+
+// Base URL for your new FastAPI server
+const API_BASE = "http://127.0.0.1:8000/api";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -24,7 +29,7 @@ export default function Admin() {
   const [editItem, setEditItem] = useState(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState({ visible: false, msg: "", error: false });
-  
+
   // SECURITY & TENANT STATE
   const [authLoading, setAuthLoading] = useState(true);
   const [shopId, setShopId] = useState(null);
@@ -41,27 +46,26 @@ export default function Admin() {
     const sessionData = localStorage.getItem("custom_session");
     if (sessionData) {
       const parsedData = JSON.parse(sessionData);
-      setShopId(parsedData.shop_id); // Save their specific shop_id
+      setShopId(parsedData.shop_id);
       setAuthLoading(false);
     } else {
-      navigate("/login"); // Kick out unauthorized users
+      navigate("/login");
     }
   }, [navigate]);
 
-  // 2. DATA FETCHING (Only runs after we know their shopId)
+  // 2. DATA FETCHING 
   useEffect(() => {
-    if (!shopId) return; 
+    if (!shopId) return;
 
     fetchOrders();
     fetchMenuItems();
     fetchShopSettings();
 
-    // Auto-refresh orders every 5 seconds
     const orderInterval = setInterval(() => {
       fetchOrders();
     }, 5000);
 
-    // Listen for shop changes ONLY for this specific shop
+    // Keep Supabase Real-time for live settings updates!
     const settingsSub = supabase
       .channel('admin-shop-settings')
       .on('postgres', { event: '*', schema: 'public', table: 'shops', filter: `id=eq.${shopId}` }, () => {
@@ -75,21 +79,41 @@ export default function Admin() {
     };
   }, [shopId]);
 
-  // --- QUERIES FILTERED BY SHOP ID ---
+  // --- QUERIES USING FASTAPI ---
   async function fetchShopSettings() {
-    // Notice we are querying the new "shops" table now!
-    const { data } = await supabase.from("shops").select("*").eq("id", shopId).maybeSingle();
-    if (data) setShopSettings(data);
+    try {
+      const res = await fetch(`${API_BASE}/shops/${shopId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setShopSettings(data);
+      }
+    } catch (err) {
+      console.error("Error fetching shop settings:", err);
+    }
   }
 
   async function fetchOrders() {
-    const { data } = await supabase.from("orders").select("*").eq("shop_id", shopId).order("created_at", { ascending: false });
-    setOrders(data || []);
+    try {
+      const res = await fetch(`${API_BASE}/orders?shop_id=${shopId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setOrders(data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+    }
   }
 
   async function fetchMenuItems() {
-    const { data } = await supabase.from("menu_items").select("*").eq("shop_id", shopId).order("name");
-    setMenuItems(data || []);
+    try {
+      const res = await fetch(`${API_BASE}/menu-items?shop_id=${shopId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setMenuItems(data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching menu items:", err);
+    }
   }
 
   function showToast(msg, error = false) {
@@ -97,66 +121,103 @@ export default function Admin() {
     setTimeout(() => setToast(t => ({ ...t, visible: false })), 4000);
   }
 
-  // --- ACTIONS ---
+  // --- ACTIONS USING FASTAPI ---
   async function updateStatus(id, newStatus) {
+    // Optimistic UI update
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
-    
-    const { data, error } = await supabase
-      .from("orders")
-      .update({ status: newStatus })
-      .eq("id", id)
-      .select();
-    
-    if (error || !data || data.length === 0) {
-      showToast("Failed to update order", true);
-      fetchOrders(); 
-    } else {
+
+    try {
+      const res = await fetch(`${API_BASE}/orders/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (!res.ok) throw new Error("Failed to update order");
+
       showToast(`Order marked as ${newStatus}`);
+    } catch (error) {
+      showToast("Failed to update order", true);
+      fetchOrders(); // Revert on failure
     }
   }
 
   async function handleAdd(fields) {
     setSaving(true);
-    // Attach the shop_id to the new menu item!
     const payload = { ...fields, shop_id: shopId };
-    
-    const { error } = await supabase.from("menu_items").insert([payload]);
-    setSaving(false);
-    
-    if (error) { showToast("Failed to add: " + error.message, true); return; }
-    
-    showToast("Item added to menu!");
-    setShowAddModal(false);
-    fetchMenuItems();
-    setTab("menu");
+
+    try {
+      const res = await fetch(`${API_BASE}/menu-items`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.detail || "Error adding item");
+      }
+
+      showToast("Item added to menu!");
+      setShowAddModal(false);
+      fetchMenuItems();
+      setTab("menu");
+    } catch (error) {
+      showToast("Failed to add: " + error.message, true);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleEdit(fields) {
     setSaving(true);
-    const { error } = await supabase.from("menu_items").update(fields).eq("id", editItem.id);
-    setSaving(false);
-    
-    if (error) { showToast("Failed to save: " + error.message, true); return; }
-    
-    showToast("Item updated!");
-    setEditItem(null);
-    fetchMenuItems();
+    const payload = { ...fields, shop_id: shopId }; // Schema requires shop_id
+
+    try {
+      const res = await fetch(`${API_BASE}/menu-items/${editItem.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.detail || "Error updating item");
+      }
+
+      showToast("Item updated!");
+      setEditItem(null);
+      fetchMenuItems();
+    } catch (error) {
+      showToast("Failed to save: " + error.message, true);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function deleteFood(id) {
     if (!window.confirm("Delete this menu item?")) return;
-    await supabase.from("menu_items").delete().eq("id", id);
-    fetchMenuItems();
-    showToast("Item deleted");
+
+    try {
+      const res = await fetch(`${API_BASE}/menu-items/${id}`, {
+        method: "DELETE"
+      });
+
+      if (!res.ok) throw new Error("Failed to delete item");
+
+      fetchMenuItems();
+      showToast("Item deleted");
+    } catch (error) {
+      showToast("Failed to delete", true);
+    }
   }
 
   const handleLogout = () => {
     localStorage.removeItem("custom_session");
-    supabase.auth.signOut();
+    supabase.auth.signOut(); // Keep this logic for secure auth clearance
     navigate("/login");
   };
 
-  // --- RENDER HELPERS ---
   if (authLoading) {
     return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#050505', color: 'white' }}><h2>Loading dashboard...</h2></div>;
   }
@@ -167,10 +228,12 @@ export default function Admin() {
 
   const NAV = [
     { id: "orders", label: "Orders", badge: pendingCount + preparingCount },
+    { id: "cashier", label: "Cashier POS" },
     { id: "menu", label: "Menu Items", badge: menuItems.length },
     { id: "qrcode", label: "QR Generator" },
     { id: "orders-management", label: "Orders Management" },
     { id: "payment", label: "Payment Settings" },
+    { id: "staff", label: "Staff Management" },
     { id: "customize", label: "Customize Shop" },
     { id: "reports", label: "Reports & Analytics" },
     { id: "profile", label: "Profile" }
@@ -207,7 +270,7 @@ export default function Admin() {
       )}
 
       <div className="admin-layout">
-        
+
         <div className="sidebar">
           <div className="sidebar-brand">
             <div className="sidebar-brand-tag">Admin Panel</div>
@@ -235,24 +298,28 @@ export default function Admin() {
           <div className="main-header">
             <div>
               <div className="page-title">
-                {tab === "orders" ? "Live Orders" 
-                 : tab === "orders-management" ? "Orders Management" 
-                 : tab === "menu" ? "Menu Items" 
-                 : tab === "qrcode" ? "QR Generator" 
-                 : tab === "payment" ? "Payment Settings" 
-                 : tab === "reports" ? "Reports & Analytics" 
-                 : tab === "profile" ? "Profile"
-                 : "Shop Customization"}
+                {tab === "orders" ? "Live Orders"
+                  : tab === "cashier" ? "Cashier Register"
+                    : tab === "orders-management" ? "Orders Management"
+                      : tab === "menu" ? "Menu Items"
+                        : tab === "qrcode" ? "QR Generator"
+                          : tab === "payment" ? "Payment Settings"
+                            : tab === "staff" ? "Staff Management"
+                              : tab === "reports" ? "Reports & Analytics"
+                                : tab === "profile" ? "Profile"
+                                  : "Shop Customization"}
               </div>
               <div className="page-sub">
-                {tab === "orders" ? `${orders.length} total orders` 
-                 : tab === "orders-management" ? "Manage and track order history"
-                 : tab === "menu" ? `${menuItems.length} items on menu` 
-                 : tab === "qrcode" ? "Generate table QR codes"
-                 : tab === "payment" ? "Configure your payment gateways"
-                 : tab === "reports" ? "View performance and sales"
-                 : tab === "profile" ? "Manage your account"
-                 : "Update your store branding"}
+                {tab === "orders" ? `${orders.length} total orders`
+                  : tab === "cashier" ? "Process payments for Dine-in and Walk-in orders"
+                    : tab === "orders-management" ? "Manage and track order history"
+                      : tab === "menu" ? `${menuItems.length} items on menu`
+                        : tab === "qrcode" ? "Generate table QR codes"
+                          : tab === "payment" ? "Configure your payment gateways"
+                            : tab === "staff" ? "Manage your team and permissions"
+                              : tab === "reports" ? "View performance and sales"
+                                : tab === "profile" ? "Manage your account"
+                                  : "Update your store branding"}
               </div>
             </div>
 
@@ -292,9 +359,10 @@ export default function Admin() {
               </div>
             )}
 
-            {/* ROUTING */}
             {tab === "orders" ? (
               <Orders orders={orders} updateStatus={updateStatus} />
+            ) : tab === "cashier" ? (
+              <CashierDashboard />
             ) : tab === "orders-management" ? (
               <OrdersManagement showToast={showToast} />
             ) : tab === "menu" ? (
@@ -308,6 +376,8 @@ export default function Admin() {
               <QRCode showToast={showToast} />
             ) : tab === "payment" ? (
               <PaymentSettings showToast={showToast} />
+            ) : tab === "staff" ? (
+              <StaffManagement />
             ) : tab === "customize" ? (
               <Customize showToast={showToast} />
             ) : tab === "reports" ? (

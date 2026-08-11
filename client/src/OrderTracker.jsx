@@ -21,7 +21,7 @@ export default function OrderTracker({ orderId, onBack }) {
   const [order, setOrder] = useState(null);
   const [shopSettings, setShopSettings] = useState(null);
   
-  // ✅ NEW: States for the Pay-After bill flow
+
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasPaid, setHasPaid] = useState(false);

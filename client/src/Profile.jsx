@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // <-- Imported useNavigate
 import supabase from "./supabase";
 
-export default function Profile({ onLogout }) {
+export default function Profile() {
+  const navigate = useNavigate(); // <-- Added for logout redirection
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -13,7 +15,7 @@ export default function Profile({ onLogout }) {
     full_name: "",
     phone_number: "",
     role: "",
-    restaurant_name: "",
+    restaurant_name: "", 
     status: "Active",
     avatar_url: ""
   });
@@ -40,8 +42,7 @@ export default function Profile({ onLogout }) {
       
       setAuthUser(user);
 
-      // 2. Fetch custom profile data (Role, Restaurant Name, Phone, etc.)
-      // Note: Adjust 'profiles' to match your actual user table name
+      // 2. Fetch custom profile data (Role, Phone, shop_id, etc.)
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
@@ -54,6 +55,19 @@ export default function Profile({ onLogout }) {
 
       if (profileData) {
         setProfile((prev) => ({ ...prev, ...profileData }));
+
+        // 3. Fetch the actual Restaurant Name from the 'shops' table
+        if (profileData.shop_id) {
+          const { data: shopData } = await supabase
+            .from("shops")
+            .select("shop_name")
+            .eq("id", profileData.shop_id)
+            .single();
+            
+          if (shopData) {
+            setProfile((prev) => ({ ...prev, restaurant_name: shopData.shop_name }));
+          }
+        }
       }
     } catch (error) {
       showMessage("error", error.message || "Failed to load profile.");
@@ -114,13 +128,15 @@ export default function Profile({ onLogout }) {
     }
   }
 
+  // --- FIXED LOGOUT HANDLER ---
   async function handleSignOut() {
-    await supabase.auth.signOut();
-    if (onLogout) onLogout();
+    localStorage.removeItem("custom_session"); // Clear your custom session
+    await supabase.auth.signOut();             // Clear Supabase session
+    navigate("/login");                        // Redirect to login page
   }
 
   if (loading) {
-    return <div className="loading-state">Loading your profile...</div>;
+    return <div className="loading-state" style={{ padding: "40px", textAlign: "center" }}>Loading your profile...</div>;
   }
 
   return (
@@ -144,8 +160,10 @@ export default function Profile({ onLogout }) {
         </div>
         <div className="profile-titles">
           <h2>{profile.full_name || "Unknown User"}</h2>
-          <p className="role-text">{profile.role || "Staff"} at {profile.restaurant_name || "Restaurant"}</p>
-          <span className={`badge ${profile.status === 'Active' ? 'Served' : 'Cancelled'}`}>
+          <p className="role-text" style={{ textTransform: "capitalize" }}>
+            {profile.role || "Owner"} at {profile.restaurant_name || "Your Restaurant"}
+          </p>
+          <span className={`badge ${profile.status === 'active' ? 'Served' : 'Cancelled'}`}>
             {profile.status}
           </span>
         </div>
@@ -180,9 +198,10 @@ export default function Profile({ onLogout }) {
                 <input 
                   type="text" 
                   className="field-input"
-                  value={profile.full_name} 
+                  value={profile.full_name || ""} 
                   onChange={(e) => setProfile({...profile, full_name: e.target.value})}
                   disabled={!editMode}
+                  placeholder="Enter your name"
                 />
               </div>
               <div className="form-group">
@@ -190,19 +209,20 @@ export default function Profile({ onLogout }) {
                 <input 
                   type="text" 
                   className="field-input"
-                  value={profile.phone_number} 
+                  value={profile.phone_number || ""} 
                   onChange={(e) => setProfile({...profile, phone_number: e.target.value})}
                   disabled={!editMode}
+                  placeholder="e.g. +1 234 567 8900"
                 />
               </div>
               <div className="form-group">
                 <label>Email Address</label>
                 <input type="email" className="field-input" value={authUser?.email || ""} disabled />
-                <span className="field-hint">Email cannot be changed here.</span>
+                <span className="field-hint" style={{ fontSize: "12px", color: "#666" }}>Email cannot be changed here.</span>
               </div>
               <div className="form-group">
                 <label>Role</label>
-                <input type="text" className="field-input" value={profile.role || ""} disabled />
+                <input type="text" className="field-input" value={profile.role || "Owner"} disabled style={{ textTransform: "capitalize" }}/>
               </div>
             </div>
           </div>
@@ -210,11 +230,11 @@ export default function Profile({ onLogout }) {
           {/* 3. Account Details (Read Only) */}
           <div className="admin-card">
             <h3>Account Details</h3>
-            <ul className="details-list">
-              <li><strong>User ID:</strong> <span>{authUser?.id.slice(0, 8)}...</span></li>
-              <li><strong>Restaurant:</strong> <span>{profile.restaurant_name || "N/A"}</span></li>
-              <li><strong>Account Created:</strong> <span>{new Date(authUser?.created_at).toLocaleDateString()}</span></li>
-              <li><strong>Last Login:</strong> <span>{new Date(authUser?.last_sign_in_at).toLocaleString()}</span></li>
+            <ul className="details-list" style={{ listStyle: "none", padding: 0, lineHeight: "2" }}>
+              <li><strong>User ID:</strong> <span style={{ color: "#666" }}>{authUser?.id.slice(0, 8)}...</span></li>
+              <li><strong>Restaurant:</strong> <span style={{ color: "#666" }}>{profile.restaurant_name || "N/A"}</span></li>
+              <li><strong>Account Created:</strong> <span style={{ color: "#666" }}>{authUser?.created_at ? new Date(authUser.created_at).toLocaleDateString() : "N/A"}</span></li>
+              <li><strong>Last Login:</strong> <span style={{ color: "#666" }}>{authUser?.last_sign_in_at ? new Date(authUser.last_sign_in_at).toLocaleString() : "N/A"}</span></li>
             </ul>
           </div>
         </div>
@@ -237,7 +257,7 @@ export default function Profile({ onLogout }) {
                   required
                 />
               </div>
-              <div className="form-group">
+              <div className="form-group" style={{ marginTop: "15px" }}>
                 <label>Confirm New Password</label>
                 <input 
                   type="password" 
@@ -247,25 +267,25 @@ export default function Profile({ onLogout }) {
                   required
                 />
               </div>
-              <button type="submit" className="btn-primary" disabled={saving || !passwords.new}>
+              <button type="submit" className="btn-primary" disabled={saving || !passwords.new} style={{ marginTop: "15px", width: "100%" }}>
                 {saving ? "Updating..." : "Update Password"}
               </button>
             </form>
           </div>
 
           {/* 5. Notifications */}
-          <div className="admin-card">
+          <div className="admin-card" style={{ marginTop: "20px" }}>
             <h3>Notifications</h3>
-            <div className="toggle-list">
-              <div className="toggle-row">
+            <div className="toggle-list" style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "15px" }}>
+              <div className="toggle-row" style={{ display: "flex", justifyContent: "space-between" }}>
                 <span>New Order Alerts</span>
                 <input type="checkbox" checked={notifications.newOrders} onChange={(e) => setNotifications({...notifications, newOrders: e.target.checked})} />
               </div>
-              <div className="toggle-row">
+              <div className="toggle-row" style={{ display: "flex", justifyContent: "space-between" }}>
                 <span>Payment Notifications</span>
                 <input type="checkbox" checked={notifications.payments} onChange={(e) => setNotifications({...notifications, payments: e.target.checked})} />
               </div>
-              <div className="toggle-row">
+              <div className="toggle-row" style={{ display: "flex", justifyContent: "space-between" }}>
                 <span>System Updates</span>
                 <input type="checkbox" checked={notifications.system} onChange={(e) => setNotifications({...notifications, system: e.target.checked})} />
               </div>
@@ -273,10 +293,14 @@ export default function Profile({ onLogout }) {
           </div>
 
           {/* 6. Security / Logout */}
-          <div className="admin-card danger-zone">
+          <div className="admin-card danger-zone" style={{ marginTop: "20px" }}>
             <h3>Account Security</h3>
-            <p className="security-text">Active Session: This device</p>
-            <button className="btn-danger-outline full-width" onClick={handleSignOut}>
+            <p className="security-text" style={{ marginBottom: "15px", color: "#666" }}>Active Session: This device</p>
+            <button 
+              className="btn-danger-outline full-width" 
+              onClick={handleSignOut}
+              style={{ width: "100%", padding: "10px", color: "#dc2626", border: "1px solid #dc2626", background: "transparent", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}
+            >
               Sign Out Securely
             </button>
           </div>

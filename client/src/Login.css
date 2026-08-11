@@ -1,33 +1,32 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-.register-container {
+.login-container {
   position: relative;
   display: flex;
   min-height: 100vh;
   justify-content: center;
   align-items: center;
-  background: #050505;
-  color: white;
-  font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
-  padding: 40px 20px;
+  background: #050505; /* matches .landing-page background exactly */
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   overflow: hidden;
+  padding: 24px;
   box-sizing: border-box;
 }
 
-/* Same warm radial glow used behind the landing page hero and the login card */
-.register-glow {
+/* Same warm radial glow used behind the landing page hero */
+.login-glow {
   position: absolute;
-  top: 15%;
+  top: 20%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 900px;
-  height: 900px;
+  width: 800px;
+  height: 800px;
   background: radial-gradient(circle, rgba(238, 180, 0, 0.12) 0%, rgba(5, 5, 5, 0) 60%);
   pointer-events: none;
   z-index: 0;
 }
 
-.register-wrap {
+.login-wrap {
   position: relative;
   z-index: 1;
   display: flex;
@@ -35,7 +34,7 @@
   align-items: center;
   gap: 28px;
   width: 100%;
-  max-width: 480px;
+  max-width: 420px;
 }
 
 /* --- Entrance animation, identical curve to the landing page's .animate-up --- */
@@ -59,14 +58,14 @@
   }
 }
 
-/* --- Brand mark, matches the landing page navbar and login page --- */
-.register-brand {
+/* --- Brand mark, matches the landing page navbar's logo treatment --- */
+.login-brand {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.register-brand-mark {
+.login-brand-mark {
   width: 34px;
   height: 34px;
   border-radius: 10px;
@@ -78,56 +77,44 @@
   box-shadow: 0 4px 12px rgba(238, 180, 0, 0.35);
 }
 
-.register-brand-word {
+.login-brand-word {
   font-weight: 800;
   font-size: 18px;
   letter-spacing: -0.5px;
   color: #ffffff;
 }
 
-.register-card {
+.login-card {
   background: rgba(15, 15, 15, 0.75);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   padding: 48px 40px;
-  border-radius: 24px; /* matches the landing page's card radius */
+  border-radius: 24px; /* matches feature-card / testimonial-card radius */
   width: 100%;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.8), 0 0 20px rgba(238, 180, 0, 0.05);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-top: 3px solid #eeb400;
+  border-top: 3px solid #eeb400; /* brand accent line at the top */
   box-sizing: border-box;
 }
 
-.register-title {
+.login-title {
   text-align: center;
   margin-bottom: 8px;
   margin-top: 0;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 800;
   color: #ffffff;
   letter-spacing: -0.5px;
 }
 
-.register-subtitle {
+.login-subtitle {
   text-align: center;
-  margin-bottom: 32px;
-  font-size: 15px;
+  margin-bottom: 36px;
+  font-size: 14px;
   color: #a3a3a3;
 }
 
-.register-section-title {
-  font-size: 14px;
-  color: #eeb400;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 16px;
-  margin-top: 24px;
-  border-bottom: 1px solid #222;
-  padding-bottom: 8px;
-}
-
-.register-error {
+.login-error {
   background: rgba(220, 38, 38, 0.1);
   color: #ef4444;
   border: 1px solid rgba(220, 38, 38, 0.2);
@@ -139,69 +126,71 @@
   font-weight: 500;
 }
 
-.register-field {
+.login-field {
   margin-bottom: 20px;
 }
 
-.register-label {
+.login-label {
   display: block;
   margin-bottom: 8px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: #a3a3a3;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.register-input {
+.login-input {
   width: 100%;
   padding: 14px 16px;
   border-radius: 10px;
   border: 1px solid #333;
   background: #0a0a0a;
   color: white;
-  font-size: 15px;
   font-family: inherit;
+  font-size: 15px;
   transition: all 0.2s ease;
   box-sizing: border-box;
 }
 
-.register-input:focus {
+/* Soft gold glow on focus — matches the landing page's accent color exactly */
+.login-input:focus {
   outline: none;
   border-color: #eeb400;
   box-shadow: 0 0 0 3px rgba(238, 180, 0, 0.15);
-  background: #141414;
 }
 
-.register-input::placeholder {
-  color: #444;
+.login-input::placeholder {
+  color: #555;
 }
 
-/* Same pill-button treatment as .btn-primary.btn-glow on the landing page and login page */
-.register-button {
+/* Same pill-button treatment as .btn-primary.btn-glow on the landing page */
+.login-button {
   width: 100%;
-  padding: 16px;
+  padding: 14px;
   border-radius: 50px;
   border: none;
   background: #eeb400;
   color: #111111;
-  font-size: 16px;
+  font-family: inherit;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  margin-top: 24px;
-  font-family: inherit;
+  margin-top: 12px;
 }
 
-.register-button:hover:not(:disabled) {
+.login-button:hover:not(:disabled) {
   background: #ffc926;
   transform: translateY(-3px) scale(1.02);
   box-shadow: 0 10px 25px rgba(238, 180, 0, 0.4);
 }
 
-.register-button:active:not(:disabled) {
+.login-button:active:not(:disabled) {
   transform: scale(0.98);
 }
 
-.register-button:disabled {
+.login-button:disabled {
   background: #333;
   color: #666;
   cursor: not-allowed;
@@ -209,24 +198,24 @@
   box-shadow: none;
 }
 
-.register-footer-links {
+.login-footer-links {
   text-align: center;
   margin-top: 24px;
-  font-size: 14px;
+  font-size: 13px;
   color: #888;
 }
 
-.register-footer-links a {
+.login-footer-links a {
   color: #eeb400;
   font-weight: 700;
   text-decoration: none;
 }
 
-.register-footer-links a:hover {
+.login-footer-links a:hover {
   text-decoration: underline;
 }
 
-.register-back {
+.login-back {
   font-size: 13px;
   font-weight: 600;
   color: #666;
@@ -234,6 +223,6 @@
   transition: color 0.2s ease;
 }
 
-.register-back:hover {
+.login-back:hover {
   color: #eeb400;
 }

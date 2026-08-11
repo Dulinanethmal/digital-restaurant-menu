@@ -5,7 +5,10 @@ export default function Customize({ showToast }) {
   const logoRef = useRef();
   const bannerRef = useRef();
   
-  // We removed settingsId since your table doesn't use a standard ID column
+  // 1. Grab the specific restaurant's ID from the admin session
+  const session = JSON.parse(localStorage.getItem("custom_session") || "{}");
+  const shopId = session.shop_id;
+
   const [shopName, setShopName] = useState("");
   const [description, setDescription] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
@@ -17,11 +20,20 @@ export default function Customize({ showToast }) {
 
   // Fetch current settings when the tab opens
   useEffect(() => {
+    if (!shopId) {
+      console.error("No shop ID found in session.");
+      return;
+    }
     fetchSettings();
-  }, []);
+  }, [shopId]);
 
   async function fetchSettings() {
-    const { data } = await supabase.from("shop_settings").select("*").limit(1).maybeSingle();
+    const { data } = await supabase
+      .from("shops") 
+      .select("*")
+      .eq("id", shopId)
+      .maybeSingle();
+
     if (data) {
       setShopName(data.shop_name || "");
       setDescription(data.description || "");
@@ -39,7 +51,8 @@ export default function Customize({ showToast }) {
     isLogo ? setUploadingLogo(true) : setUploadingBanner(true);
     
     const ext = file.name.split(".").pop();
-    const fileName = `brand-${type}-${Date.now()}.${ext}`;
+    // 3. SECURE STORAGE: Include shopId in the filename to prevent overwriting other tenants' images
+    const fileName = `shop-${shopId}-${type}-${Date.now()}.${ext}`;
     
     // Reusing your food-images bucket to keep things simple
     const { data, error } = await supabase.storage.from("food-images").upload(fileName, file, { cacheControl: "3600", upsert: false });
@@ -56,7 +69,9 @@ export default function Customize({ showToast }) {
     isLogo ? setUploadingLogo(false) : setUploadingBanner(false);
   }
 
-  async function handleSave() {
+ async function handleSave() {
+    if (!shopId) return alert("Error: Missing shop ID.");
+    
     setSaving(true);
     const payload = {
       shop_name: shopName,
@@ -65,17 +80,17 @@ export default function Customize({ showToast }) {
       banner_url: bannerUrl,
     };
 
-    // ✅ FIXED: Target the row using payment_flow instead of an ID
+
     const { error } = await supabase
-      .from("shop_settings")
+      .from("shops")
       .update(payload)
-      .not("payment_flow", "is", null);
+      .eq("id", shopId); 
 
     setSaving(false);
     if (error) {
-      showToast("Failed to save settings: " + error.message, true);
+      if(showToast) showToast("Failed to save settings: " + error.message, true);
     } else {
-      showToast("Shop customizations saved successfully!");
+      if(showToast) showToast("Shop customizations saved successfully!");
       fetchSettings(); // Refresh to ensure UI matches database
     }
   }
